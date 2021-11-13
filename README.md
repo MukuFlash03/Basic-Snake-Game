@@ -1,62 +1,20 @@
-# CPPND: Capstone Snake Game Example
+# CPPND: Program a Concurrent Traffic Simulation
 
-This is a submission for the Udacity C++ NanoDegree Capstone Project. It started with Udacity's starter code - which  was inspired by [this](https://codereview.stackexchange.com/questions/212296/snake-game-in-c-with-sdl) excellent StackOverflow post and set of responses.
+<img src="data/traffic_simulation.gif"/>
 
-The original project was modified/enhanced in the following ways :
-1. Eliminated wraparound - the boundaries are now walls. This was inspired by Google's play-in-browser Snake game. But, running into the wall or the snake body does not result in death. It just necessitates a turn, if possible. If not possible, then it results in Game Over.
-2. Automatic turning - when running into the body or the wall - the snake turns left by default, if possible. If a left turn is not possible, a right turn will be attempted. The player can always override the default turn. A "left" turn when traveling in the right-ward direction means the snake will then start moving up.
-3. Speed no longer increases with food consumption - rather, when the snake is greater than 25 cells in length, speed is reduced 5% with each growth spurt till the length reaches 35 cells, after which speed stays constant. This has been found to give optimal player experience.
-4. The body of the snake is rendered such that its outline is clearly visible.
+This is the project for the fourth course in the [Udacity C++ Nanodegree Program](https://www.udacity.com/course/c-plus-plus-nanodegree--nd213): Concurrency. 
 
-<img src="snake_play.gif"/>
-
-Optional Rubric items addressed :
-
-1. The project demonstrates an understanding of C++ functions and control structures.
-- fulfilled in starter code? Yes
-- enhanced? Yes
-- Eg : renderer.cpp lines 78, 94, 110, 150 - new functions added. In the RenderBody (new) function, a loop that iterates backwards over a std::vector has been added
-
-2. The project accepts user input and process the input.
-- fulfilled in starter code? Yes
-- enhanced? Yes - no additional keystrokes processed, but the very simple "change direction" in the starter code has been revised considerably
-- new function Snake::ChangeDirection in snake.cpp line 195
-
-3. The project uses Object Oriented Programming techniques.
-- fulfilled in starter code? Yes
-- enhanced? No - one class Point was added to simplify adding functionality, but no significant changes made along these lines. The starter code already meets this.
-
-4. Classes use appropriate access specifiers for class members.
-- fulfilled in starter code? No -- in the Snake class, several data members are public
-- Implementation : all data members in Snake are now private with getters/setters. Refer lines 30-40 in snake.h
-
-5. Class constructors utilize member initialization lists.
-- fulfilled in starter code? Yes
-- enhanced : No
-
-6. Classes encapsulate behavior.
-- fulfilled in starter code? No -- same reason as in (4) above
-- Implementation : all data members in Snake now private.
-
-7. Overloaded functions allow the same function to operate on different parameters.
-- fulfilled in starter code? No
-- Implementation : Renderer::Direction - refer renderer.cpp lines 78 - 100
-
-8. The project makes use of references in function declarations.
-- Implementation : The functions Renderer::RenderBlock and Renderer::RenderBody take the block parameter by reference - refere renderer.h lines 16-21
-- Also, the getter for the Snake.body data member is as a const reference.
-
+Throughout the Concurrency course, you have been developing a traffic simulation in which vehicles are moving along streets and are crossing intersections. However, with increasing traffic in the city, traffic lights are needed for road safety. Each intersection will therefore be equipped with a traffic light. In this project, you will build a suitable and thread-safe communication protocol between vehicles and intersections to complete the simulation. Use your knowledge of concurrent programming (such as mutexes, locks and message queues) to implement the traffic lights and integrate them properly in the code base.
 
 ## Dependencies for Running Locally
-* cmake >= 3.7
+* cmake >= 2.8
   * All OSes: [click here for installation instructions](https://cmake.org/install/)
 * make >= 4.1 (Linux, Mac), 3.81 (Windows)
   * Linux: make is installed by default on most Linux distros
   * Mac: [install Xcode command line tools to get make](https://developer.apple.com/xcode/features/)
   * Windows: [Click here for installation instructions](http://gnuwin32.sourceforge.net/packages/make.htm)
-* SDL2 >= 2.0
-  * All installation instructions can be found [here](https://wiki.libsdl.org/Installation)
-  * Note that for Linux, an `apt` or `apt-get` installation is preferred to building from source.
+* OpenCV >= 4.1
+  * The OpenCV 4.1.0 source code can be found [here](https://github.com/opencv/opencv/tree/4.1.0)
 * gcc/g++ >= 5.4
   * Linux: gcc / g++ is installed by default on most Linux distros
   * Mac: same deal as make - [install Xcode command line tools](https://developer.apple.com/xcode/features/)
@@ -67,4 +25,20 @@ Optional Rubric items addressed :
 1. Clone this repo.
 2. Make a build directory in the top level directory: `mkdir build && cd build`
 3. Compile: `cmake .. && make`
-4. Run it: `./SnakeGame`.
+4. Run it: `./traffic_simulation`.
+
+## Project Tasks
+
+When the project is built initially, all traffic lights will be green. When you are finished with the project, your traffic simulation should run with red lights controlling traffic, just as in the .gif file above. See the classroom instruction and code comments for more details on each of these parts. 
+
+- **Task FP.1** : Define a class `TrafficLight` which is a child class of `TrafficObject`. The class shall have the public methods `void waitForGreen()` and `void simulate()` as well as `TrafficLightPhase getCurrentPhase()`, where `TrafficLightPhase` is an enum that can be either `red` or `green`. Also, add the private method `void cycleThroughPhases()`. Furthermore, there shall be the private member `_currentPhase` which can take `red` or `green` as its value.
+
+- **Task FP.2** : Implement the function with an infinite loop that measures the time between two loop cycles and toggles the current phase of the traffic light between red and green and sends an update method to the message queue using move semantics. The cycle duration should be a random value between 4 and 6 seconds. Also, the while-loop should use `std::this_thread::sleep_`for to wait 1ms between two cycles. Finally, the private method `cycleThroughPhases` should be started in a thread when the public method `simulate` is called. To do this, use the thread queue in the base class.
+
+- **Task FP.3** : Define a class `MessageQueue` which has the public methods send and receive. Send should take an rvalue reference of type TrafficLightPhase whereas receive should return this type. Also, the class should define an `std::dequeue` called `_queue`, which stores objects of type `TrafficLightPhase`. Finally, there should be an `std::condition_variable` as well as an `std::mutex` as private members.
+
+- **Task FP.4** : Implement the method `Send`, which should use the mechanisms `std::lock_guard<std::mutex>` as well as `_condition.notify_one()` to add a new message to the queue and afterwards send a notification. Also, in class `TrafficLight`, create a private member of type `MessageQueue` for messages of type `TrafficLightPhase` and use it within the infinite loop to push each new `TrafficLightPhase` into it by calling send in conjunction with move semantics.
+
+- **Task FP.5** : The method receive should use `std::unique_lock<std::mutex>` and `_condition.wait()` to wait for and receive new messages and pull them from the queue using move semantics. The received object should then be returned by the receive function. Then, add the implementation of the method `waitForGreen`, in which an infinite while-loop runs and repeatedly calls the `receive` function on the message queue. Once it receives `TrafficLightPhase::green`, the method returns.
+
+- **Task FP.6** : In class Intersection, add a private member `_trafficLight` of type `TrafficLight`. In method `Intersection::simulate()`, start the simulation of `_trafficLight`. Then, in method `Intersection::addVehicleToQueue`, use the methods `TrafficLight::getCurrentPhase` and `TrafficLight::waitForGreen` to block the execution until the traffic light turns green.
